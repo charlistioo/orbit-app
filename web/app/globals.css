@@ -1,0 +1,23 @@
+@import "@heroui/styles";
+
+:root {
+  --orbit-bg: #f7f4ee;
+  --orbit-surface: #ffffff;
+  --orbit-ink: #2a2420;
+  --orbit-ink-muted: #7a7168;
+  --orbit-accent: #b5652f;
+  --orbit-accent-soft: #f1e2d3;
+  --orbit-sage: #6f8f74;
+  --orbit-sage-soft: #e3ebe1;
+  --orbit-border: #e8e1d6;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--orbit-bg);
+  color: var(--orbit-ink);
+}

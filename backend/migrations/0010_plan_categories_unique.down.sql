@@ -1,0 +1,1 @@
+ALTER TABLE plan_categories DROP CONSTRAINT plan_categories_daily_plan_category_unique;

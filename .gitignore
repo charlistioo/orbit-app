@@ -1,0 +1,12 @@
+# Root-level secrets - never commit these.
+/.env
+.env
+.env.local
+.env.*.local
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# runtime logs from local dev/testing
+*.log
