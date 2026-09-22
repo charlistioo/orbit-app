@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Orbit, Receipt, Smile, SlidersHorizontal, PiggyBank, Plus } from "lucide-react";
+import { Orbit, Receipt, Smile, SlidersHorizontal, PiggyBank, Plus, X } from "lucide-react";
 import { Card, Button, Input, ProgressBar, ProgressCircle } from "@heroui/react";
 import { useAuth } from "@/lib/auth";
 import {
@@ -95,11 +95,22 @@ function PlanToday({
   }, [token]);
 
   const addCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    const created = await api.post<Category>("/categories", token, { name: newCategoryName.trim() });
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    const isDuplicate = rows.some((r) => r.name.toLowerCase() === trimmed.toLowerCase());
+    if (isDuplicate) {
+      setError(`Kategori "${trimmed}" sudah ada`);
+      return;
+    }
+    setError("");
+    const created = await api.post<Category>("/categories", token, { name: trimmed });
     setCategories((prev) => [created, ...prev]);
     setRows((prev) => [{ categoryId: created.ID, name: created.Name, amount: "" }, ...prev]);
     setNewCategoryName("");
+  };
+
+  const removeRow = (categoryId: string) => {
+    setRows((prev) => prev.filter((r) => r.categoryId !== categoryId));
   };
 
   const totalPlanned = rows.reduce((sum, r) => sum + (parseInt(r.amount, 10) || 0), 0);
@@ -176,6 +187,15 @@ function PlanToday({
                       setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, amount: v } : r)));
                     }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row.categoryId)}
+                    aria-label={`Hapus kategori ${row.name}`}
+                    className="shrink-0 rounded-full p-1"
+                    style={{ color: "var(--orbit-ink-muted)" }}
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
               ))
             )}

@@ -71,7 +71,7 @@ func Generate(in Inputs) []string {
 	if in.DistinctHistoryDays >= 3 {
 		for _, category := range risingCategories(in.TrendWindow) {
 			insights = append(insights, fmt.Sprintf(
-				"Pengeluaran kategori %s naik 3 hari berturut-turut - ini pola yang layak diperhatikan.",
+				"%s naik 3 hari berturut-turut - ini pola yang layak diperhatikan. Coba cek apa yang mendorongnya sebelum jadi kebiasaan tetap.",
 				category,
 			))
 		}
@@ -79,26 +79,26 @@ func Generate(in Inputs) []string {
 
 	if in.MoodBeforeSpending {
 		insights = append(insights,
-			"Ada perubahan mood yang tercatat sebelum beberapa transaksi - ini hanya kaitan waktu, bukan berarti mood tersebut menjadi penyebab pengeluaran.",
+			"Mood sempat tercatat berubah sebelum beberapa transaksi terjadi - ini hanya kaitan waktu, bukan berarti mood tersebut menjadi penyebab pengeluaran, tapi bisa jadi menarik untuk direfleksikan sendiri.",
 		)
 	}
 
 	if in.BankCredited > 0 {
 		insights = append(insights, fmt.Sprintf(
-			"%s masuk ke Consumption Bank dari sisa anggaran yang tidak terpakai.",
+			"Kerja bagus - %s masuk ke Consumption Bank dari sisa anggaran yang tidak terpakai.",
 			formatRupiah(in.BankCredited),
 		))
 	}
 	if in.BankApplied > 0 {
 		insights = append(insights, fmt.Sprintf(
-			"%s dari Consumption Bank digunakan untuk menutup pengeluaran yang melebihi rencana.",
+			"%s dari Consumption Bank digunakan untuk menutup pengeluaran yang melebihi rencana - memang untuk situasi seperti ini saldo itu ada.",
 			formatRupiah(in.BankApplied),
 		))
 	}
 
 	if topCategory, ok := mostFrequentCategory(in.CategoryFrequency); ok {
 		insights = append(insights, fmt.Sprintf(
-			"Kategori yang paling sering dipakai: %s.",
+			"%s adalah kategori yang paling sering dipakai. Kalau ingin diuji, coba kurangi frekuensinya sedikit dan lihat dampaknya.",
 			topCategory,
 		))
 	}
@@ -155,9 +155,20 @@ func planVsActualMessage(period string, planTotal, actualTotal float64) string {
 		return fmt.Sprintf("Belum ada rencana yang ditetapkan untuk %s, tercatat pengeluaran %s.", scope, formatRupiah(actualTotal))
 	}
 	if actualTotal > planTotal {
-		return fmt.Sprintf("Pengeluaran %s (%s) melebihi rencana (%s).", scope, formatRupiah(actualTotal), formatRupiah(planTotal))
+		over := actualTotal - planTotal
+		return fmt.Sprintf(
+			"Pengeluaran %s (%s) melebihi rencana (%s) sebesar %s. Coba tandai satu kategori untuk direm dulu, atau sesuaikan rencananya kalau memang situasinya berubah.",
+			scope, formatRupiah(actualTotal), formatRupiah(planTotal), formatRupiah(over),
+		)
 	}
-	return fmt.Sprintf("Pengeluaran %s (%s) masih dalam rencana (%s).", scope, formatRupiah(actualTotal), formatRupiah(planTotal))
+	saved := planTotal - actualTotal
+	if saved == 0 {
+		return fmt.Sprintf("Pengeluaran %s (%s) pas sesuai rencana (%s) - konsisten seperti ini yang bikin rencana ke depan makin akurat.", scope, formatRupiah(actualTotal), formatRupiah(planTotal))
+	}
+	return fmt.Sprintf(
+		"Pengeluaran %s (%s) masih dalam rencana (%s) - hemat %s. Ritme seperti ini layak dipertahankan.",
+		scope, formatRupiah(actualTotal), formatRupiah(planTotal), formatRupiah(saved),
+	)
 }
 
 func formatRupiah(amount float64) string {

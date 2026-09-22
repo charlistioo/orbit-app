@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PiggyBank, X } from "lucide-react";
+import { PiggyBank, X, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
-import { Card, ProgressBar, buttonVariants } from "@heroui/react";
+import { Card, ProgressBar, Button, buttonVariants } from "@heroui/react";
 import { useAuth } from "@/lib/auth";
 import {
   api,
@@ -30,6 +30,7 @@ export default function BankPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [error, setError] = useState("");
+  const [showToday, setShowToday] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -106,37 +107,95 @@ export default function BankPage() {
       </Card>
 
       {plan && plan.Categories.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {plan.Categories.map((pc) => {
-            const actual = actualFor(pc.CategoryID);
-            const saved = pc.PlannedAmount - actual;
-            return (
-              <Card key={pc.ID} variant="default" className="!rounded-2xl">
-                <Card.Content className="flex flex-col gap-1.5 py-4">
-                  <span className="text-sm font-medium" style={{ color: "var(--orbit-ink)" }}>
-                    {categoryName(pc.CategoryID)}
+        <Button
+          variant="secondary"
+          fullWidth
+          onPress={() => setShowToday((v) => !v)}
+        >
+          {showToday ? "Sembunyikan Penghematan Hari Ini" : "Lihat Penghematan Anda Hari Ini"}
+        </Button>
+      )}
+
+      {showToday && plan && plan.Categories.length > 0 && (() => {
+        const rows = plan.Categories.map((pc) => {
+          const actual = actualFor(pc.CategoryID);
+          const diff = pc.PlannedAmount - actual;
+          return { pc, actual, diff, hemat: diff >= 0 };
+        });
+        const hematCount = rows.filter((r) => r.hemat).length;
+        const borosCount = rows.length - hematCount;
+        const netTotal = rows.reduce((sum, r) => sum + r.diff, 0);
+
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Card variant="default" className="!rounded-2xl">
+                <Card.Content className="flex flex-col items-center gap-1 py-4">
+                  <TrendingUp size={18} color="var(--orbit-sage)" />
+                  <span className="text-lg font-semibold" style={{ color: "var(--orbit-ink)" }}>
+                    {hematCount}
                   </span>
-                  <div className="flex justify-between text-xs">
-                    <span style={{ color: "var(--orbit-ink-muted)" }}>Direncanakan</span>
-                    <span style={{ color: "var(--orbit-ink)" }}>{formatRupiah(pc.PlannedAmount)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span style={{ color: "var(--orbit-ink-muted)" }}>Terpakai</span>
-                    <span style={{ color: "var(--orbit-ink)" }}>{formatRupiah(actual)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span style={{ color: "var(--orbit-ink-muted)" }}>Tersimpan</span>
-                    <span style={{ color: saved >= 0 ? "var(--orbit-sage)" : "var(--orbit-accent)" }}>
-                      {saved >= 0 ? "+" : ""}
-                      {formatRupiah(saved)}
-                    </span>
-                  </div>
+                  <span className="text-xs" style={{ color: "var(--orbit-ink-muted)" }}>
+                    Kategori Hemat
+                  </span>
                 </Card.Content>
               </Card>
-            );
-          })}
-        </div>
-      )}
+              <Card variant="default" className="!rounded-2xl">
+                <Card.Content className="flex flex-col items-center gap-1 py-4">
+                  <TrendingDown size={18} color="var(--orbit-warn)" />
+                  <span className="text-lg font-semibold" style={{ color: "var(--orbit-ink)" }}>
+                    {borosCount}
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--orbit-ink-muted)" }}>
+                    Kategori Boros
+                  </span>
+                </Card.Content>
+              </Card>
+            </div>
+
+            <Card variant="secondary" className="!rounded-2xl">
+              <Card.Content className="flex items-center justify-between py-4">
+                <span className="text-sm" style={{ color: "var(--orbit-ink-muted)" }}>
+                  Total hari ini
+                </span>
+                <span
+                  className="text-base font-semibold"
+                  style={{ color: netTotal >= 0 ? "var(--orbit-sage)" : "var(--orbit-warn)" }}
+                >
+                  {netTotal >= 0 ? "Hemat " : "Boros "}
+                  {formatRupiah(Math.abs(netTotal))}
+                </span>
+              </Card.Content>
+            </Card>
+
+            <div className="flex flex-col gap-2">
+              {rows.map(({ pc, actual, diff, hemat }) => (
+                <Card key={pc.ID} variant="default" className="!rounded-2xl">
+                  <Card.Content className="flex flex-col gap-1.5 py-4">
+                    <span className="text-sm font-medium" style={{ color: "var(--orbit-ink)" }}>
+                      {categoryName(pc.CategoryID)}
+                    </span>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "var(--orbit-ink-muted)" }}>Direncanakan</span>
+                      <span style={{ color: "var(--orbit-ink)" }}>{formatRupiah(pc.PlannedAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "var(--orbit-ink-muted)" }}>Terpakai</span>
+                      <span style={{ color: "var(--orbit-ink)" }}>{formatRupiah(actual)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "var(--orbit-ink-muted)" }}>{hemat ? "Hemat" : "Boros"}</span>
+                      <span style={{ color: hemat ? "var(--orbit-sage)" : "var(--orbit-warn)" }}>
+                        {formatRupiah(Math.abs(diff))}
+                      </span>
+                    </div>
+                  </Card.Content>
+                </Card>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <p className="text-center text-xs" style={{ color: "var(--orbit-ink-muted)" }}>
         Saldo ini tumbuh dari rencana yang tidak terpakai, dan bisa dipakai menutup selisih pengeluaran (maks. 10% saldo per transaksi).
